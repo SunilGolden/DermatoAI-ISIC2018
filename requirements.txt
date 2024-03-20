@@ -1,0 +1,12 @@
+numpy==1.26.4
+pandas==2.2.1
+matplotlib==3.8.3
+torch==2.2.1
+torchvision==0.17.1
+transformers==4.38.2
+accelerate==0.28.0
+pillow==10.2.0
+opencv-python==4.9.0.80
+wandb==0.16.4
+fastapi==0.110.0
+uvicorn==0.28.0
