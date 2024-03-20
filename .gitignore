@@ -1,3 +1,8 @@
+data/
+weights/
+config/config.json
+logs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
