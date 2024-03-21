@@ -1,0 +1,16 @@
+{
+    "random_seed": 42,
+    "data_paths": {
+        "train": "./data/ISIC2018_Task3_Training_Input",
+        "validation": "./data/ISIC2018_Task3_Validation_Input",
+        "test": "./data/ISIC2018_Task3_Test_Input"
+    },
+    "label_paths": {
+        "train": "./data/ISIC2018_Task3_Training_GroundTruth/ISIC2018_Task3_Training_GroundTruth.csv",
+        "validation": "./data/ISIC2018_Task3_Validation_GroundTruth/ISIC2018_Task3_Validation_GroundTruth.csv",
+        "test": "./data/ISIC2018_Task3_Test_GroundTruth/ISIC2018_Task3_Test_GroundTruth.csv"
+    },
+    "wandb": {
+        "api_key": "YOUR_WANDB_API_KEY_HERE"
+    }
+}
