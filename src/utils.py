@@ -1,7 +1,11 @@
+import os
 import random
 import torch
 import numpy as np
 from torchvision import transforms
+from torch.nn import CrossEntropyLoss
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader, Subset
 from dataset import ISIC2018Dataset
 
@@ -37,7 +41,6 @@ def get_data_transforms():
             transforms.RandomVerticalFlip(),
             transforms.RandomRotation(20),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10, resample=False, fillcolor=0),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
@@ -90,3 +93,94 @@ def get_loaders(config, batch_size, subset=None):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader
+
+
+def ensure_folder_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
+def train(model,
+          train_loader, 
+          val_loader,
+          device, 
+          num_epochs=100,
+          lr=0.0001, 
+          weight_decay=0.01, 
+          step_size=20, 
+          gamma=0.1,
+          patience=10, 
+          checkpoint_filename='./weights/best_model.pth'):
+    ensure_folder_exists(os.path.dirname(checkpoint_filename))
+    
+    model.to(device)
+
+    criterion = CrossEntropyLoss()
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+    best_val_loss = float('inf')
+    patience_counter = 0
+
+    print('Starting training...')
+    
+    for epoch in range(num_epochs):
+        # Training phase
+        model.train()
+        train_loss, train_correct, total_samples = 0, 0, 0
+        for images, labels in train_loader:
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.item()
+            _, predictions = torch.max(outputs, 1)
+            train_correct += (predictions == labels).sum().item()
+            total_samples += labels.size(0)
+
+        train_loss /= len(train_loader)
+        train_accuracy = train_correct / total_samples
+
+        # Validation phase
+        model.eval()
+        val_loss, val_correct, total_samples = 0, 0, 0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+                val_loss += loss.item()
+                _, predictions = torch.max(outputs, 1)
+                val_correct += (predictions == labels).sum().item()
+                total_samples += labels.size(0)
+
+        val_loss /= len(val_loader)
+        val_accuracy = val_correct / total_samples
+
+        print(f'[Epoch {epoch+1}/{num_epochs}] - '
+              f'Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.4f}, '
+              f'Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.4f}')
+
+        # Learning rate scheduling
+        scheduler.step()
+        if (epoch+1) % step_size == 0:
+            print(f'Scheduler step: Learning rate adjusted to {scheduler.get_last_lr()[0]}')
+
+        # Check for early stopping and save best model based on validation loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+            print(f'Saving new best model at epoch {epoch+1}...')
+            torch.save(model.state_dict(), checkpoint_filename)
+        else:
+            patience_counter += 1
+            print(f'Validation loss did not improve. Patience counter {patience_counter}/{patience}.')
+            if patience_counter >= patience:
+                print('Early stopping triggered. Exiting training...')
+                break
+    print('Training completed.')
