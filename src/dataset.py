@@ -1,8 +1,9 @@
 import os
 import pandas as pd
 from PIL import Image
+import torch
 from torch.utils.data import Dataset
-
+import numpy as np
 
 class ISIC2018Dataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
@@ -22,7 +23,11 @@ class ISIC2018Dataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, self.data_frame.iloc[idx, 0] + '.jpg')
         image = Image.open(img_name)
-        label = self.data_frame.iloc[idx, 1:].astype('float').to_numpy()
+        
+        # Convert one-hot encoded labels to single integer labels
+        one_hot_label = self.data_frame.iloc[idx, 1:].values
+        label = np.argmax(one_hot_label)
+        label = torch.tensor(label, dtype=torch.long)
 
         if self.transform:
             image = self.transform(image)
