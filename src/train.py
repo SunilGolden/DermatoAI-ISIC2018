@@ -1,5 +1,7 @@
 import argparse
 import json
+import torch
+import torch.nn as nn
 from utils import reset_random, get_loaders, get_device, train
 from models import create_vit_model
 
@@ -17,6 +19,10 @@ def main(args):
     # Create model
     reset_random(config['random_seed'])
     model = create_vit_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+
+    if torch.cuda.device_count() > 1:
+        print("Available GPUs", torch.cuda.device_count())
+        model = nn.DataParallel(model)
 
     # Train the model
     reset_random(config['random_seed'])
