@@ -2,11 +2,15 @@ import os
 import random
 import torch
 import numpy as np
+import wandb
 from torchvision import transforms
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader, Subset
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+import seaborn as sns
+import matplotlib.pyplot as plt
 from dataset import ISIC2018Dataset
 
 
@@ -110,7 +114,8 @@ def train(model,
           step_size=20, 
           gamma=0.1,
           patience=10, 
-          checkpoint_filename='./weights/best_model.pth'):
+          checkpoint_filename='./weights/best_model.pth',
+          track_experiment=False):
     ensure_folder_exists(os.path.dirname(checkpoint_filename))
     
     model.to(device)
@@ -171,6 +176,16 @@ def train(model,
         if (epoch+1) % step_size == 0:
             print(f'Scheduler step: Learning rate adjusted to {scheduler.get_last_lr()[0]}')
 
+        # Track Experiment
+        if track_experiment:
+            wandb.log({
+                'train/epoch': epoch+1,
+                'train/train_acc': train_accuracy,
+                'train/train_loss': train_loss,
+                'val/val_acc': val_accuracy,
+                'val/val_loss': val_loss,
+            })
+
         # Check for early stopping and save best model based on validation loss
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -184,3 +199,61 @@ def train(model,
                 print('Early stopping triggered. Exiting training...')
                 break
     print('Training completed.')
+
+
+def plot_confusion_matrix(cm, class_names):
+    fig, ax = plt.subplots(figsize=(10, 10))
+    sns.heatmap(cm, annot=True, fmt='d', ax=ax, cmap=plt.cm.Blues, cbar=False)
+    ax.set_xlabel('Predicted Labels')
+    ax.set_ylabel('True Labels')
+    ax.set_title('Confusion Matrix')
+    ax.set_xticklabels(class_names)
+    ax.set_yticklabels(class_names)
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.show()
+
+
+def test(model, test_loader, device, class_names):
+    model.eval()
+    test_loss, test_correct, total_samples = 0, 0, 0
+    all_preds = []
+    all_labels = []
+    criterion = torch.nn.CrossEntropyLoss()
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            test_loss += loss.item()
+            
+            _, predictions = torch.max(outputs, 1)
+            all_preds.extend(predictions.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+            test_correct += (predictions == labels).sum().item()
+            total_samples += labels.size(0)
+
+    test_loss /= len(test_loader)
+    test_accuracy = test_correct / total_samples
+
+    # Convert lists to numpy arrays for metric calculations
+    all_preds = np.array(all_preds)
+    all_labels = np.array(all_labels)
+
+    # Compute the metrics
+    test_f1 = f1_score(all_labels, all_preds, average='weighted')
+    test_precision = precision_score(all_labels, all_preds, average='weighted')
+    test_recall = recall_score(all_labels, all_preds, average='weighted')
+
+    # Compute confusion matrix
+    cm = confusion_matrix(all_labels, all_preds)
+
+    print('Test Loss: {:.4f}'.format(test_loss))
+    print('Test Accuracy: {:.4f}'.format(test_accuracy))
+    print('Test F1 Score: {:.4f}'.format(test_f1))
+    print('Test Precision: {:.4f}'.format(test_precision))
+    print('Test Recall: {:.4f}'.format(test_recall))
+
+    # Plot confusion matrix
+    plot_confusion_matrix(cm, class_names)
