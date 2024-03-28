@@ -62,6 +62,8 @@ MSK Dataset: (c) Anonymous; https://arxiv.org/abs/1710.05006; https://arxiv.org/
             "validation": "./data/ISIC2018_Task3_Validation_GroundTruth/ISIC2018_Task3_Validation_GroundTruth.csv",
             "test": "./data/ISIC2018_Task3_Test_GroundTruth/ISIC2018_Task3_Test_GroundTruth.csv"
         },
+        "num_classes": 7,
+        "class_names": ["MEL", "NV", "BCC", "AKIEC", "BKL", "DF", "VASC"],
         "wandb": {
             "api_key": "YOUR_WANDB_API_KEY_HERE"
         }
@@ -74,7 +76,6 @@ MSK Dataset: (c) Anonymous; https://arxiv.org/abs/1710.05006; https://arxiv.org/
 python src\train.py
         --architecture <vit or resnet50>
         --batch_size <batch_size> 
-        --num_classes <num_classes> 
         --epochs <num_epochs> 
         --lr <learning_rate> 
         --dropout_rate <dropout_rate> 
@@ -93,7 +94,6 @@ python src\train.py
 
 - `--architecture` (default: 'resnet50'): Architecture to use. Choose between 'vit' for Vision Transformer and 'resnet50' for ResNet-50.
 - `--batch_size` (default: 8): Input batch size for training.
-- `--num_classes` (default: 7): Number of classes.
 - `--epochs` (default: 100): Number of epochs to train.
 - `--lr` (default: 0.0001): Learning rate.
 - `--dropout_rate` (default: 0.1): Dropout rate.
@@ -116,7 +116,6 @@ python src\train.py
 python src\evaluate.py 
         --architecture <vit or resnet50>
         --batch_size <batch_size> 
-        --num_classes <num_classes> 
         --config_filepath <path_to_config_file> 
         --checkpoint_filename <path_to_saved_model> 
         --cm_filename <filename_for_confusion_matrix> 
@@ -128,7 +127,6 @@ python src\evaluate.py
 
 - `--architecture` (default: 'resnet50'): Architecture to use. Choose between 'vit' for Vision Transformer and 'resnet50' for ResNet-50.
 - `--batch_size` (default: 8): Input batch size for evaluation.
-- `--num_classes` (default: 7): Number of classes.
 - `--config_filepath` (default: './config/config.json'): Path to the configuration file.
 - `--checkpoint_filename` (default: './weights/best_model.pth'): Path to the saved model weights file.
 - `--cm_filename` (default: 'confusion_matrix'): Filename (without extension) for saving the generated confusion matrix image.

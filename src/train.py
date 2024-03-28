@@ -21,9 +21,9 @@ def main(args):
     reset_random(config_file['random_seed'])
 
     if args.architecture == 'resnet50':
-        model = create_resnet50_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+        model = create_resnet50_model(num_classes=config_file['num_classes'], dropout_rate=args.dropout_rate).to(device)
     elif args.architecture == 'vit':
-        model = create_vit_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+        model = create_vit_model(num_classes=config_file['num_classes'], dropout_rate=args.dropout_rate).to(device)
     else:
         raise ValueError(f"Unsupported architecture: {args.architecture}")
 
@@ -43,7 +43,7 @@ def main(args):
                 "architecture": args.architecture,
                 "random_seed": config_file['random_seed'],
                 "batch_size": args.batch_size,
-                "num_classes": args.num_classes,
+                "num_classes": config_file['num_classes'],
                 "epochs": args.epochs,
                 "learning_rate": args.lr,
                 "dropout_rate": args.dropout_rate,
@@ -81,7 +81,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Model on ISIC2018 Dataset')
     parser.add_argument('--architecture', type=str, default='resnet50', choices=['vit', 'resnet50'], help='Architecture to use (vit or resnet50) (default: resnet50)')
     parser.add_argument('--batch_size', type=int, default=8, help='Input batch size for training (default: 8)')
-    parser.add_argument('--num_classes', type=int, default=7, help='Number of classes (default: 7)')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate (default: 0.0001)')
     parser.add_argument('--dropout_rate', type=float, default=0.1, help='Dropout rate (default: 0.1)')
