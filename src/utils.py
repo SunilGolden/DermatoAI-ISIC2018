@@ -1,6 +1,7 @@
 import os
 import random
 import torch
+import torch.nn.functional as F
 import numpy as np
 import wandb
 from collections import OrderedDict
@@ -12,6 +13,7 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 import seaborn as sns
 import matplotlib.pyplot as plt
+from PIL import Image
 from dataset import ISIC2018Dataset
 from models import create_vit_model, create_resnet50_model
 
@@ -330,3 +332,22 @@ def get_run_id(project_name, run_name):
     else:
         raise ValueError(f"No run found for name {run_name} in project {project_name}")
 
+
+def preprocess_image(image_path, transform):
+    image = Image.open(image_path)
+    image = transform(image).unsqueeze(0)
+    return image
+
+
+def do_inference(model, img, device, class_names=['MEL', 'NV', 'BCC', 'AKIEC', 'BKL', 'DF', 'VASC']):
+    model.eval()
+    img = img.to(device)
+    
+    with torch.no_grad():
+        outputs = model(img)
+        probabilities = F.softmax(outputs, dim=1)
+        max_probs, preds = torch.max(probabilities, dim=1)
+        predicted_class = class_names[preds.item()]
+        confidence = max_probs.item()
+        
+        return predicted_class, confidence

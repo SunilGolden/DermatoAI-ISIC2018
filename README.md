@@ -133,3 +133,21 @@ python src\evaluate.py
 - `--run_name` (default: 'resnet-batch8-lr0_0001-dropout0_1'): Name of the experiment run to be used for identifying the Weights & Biases run ID.
 - `--track_experiment` (optional): Flag to track the evaluation using Weights & Biases.
 
+<br />
+
+## Inference
+
+```bash
+python src/inference.py
+        --architecture <vit or resnet50>
+        --img_path <path_to_image>
+        --config_filepath <path_to_config_file>
+        --checkpoint_filename <path_to_saved_model>
+```
+
+#### Arguments
+
+- `--architecture` (default: 'resnet50'): Specify the architecture to use. Choose between 'vit' for Vision Transformer and 'resnet50' for ResNet-50.
+- `--img_path` (default: './data/ISIC2018_Task3_Test_Input/ISIC_0034524.jpg'): Path to the image file to be classified.
+- `--config_filepath` (default: './config/config.json'): Path to the configuration file.
+- `--checkpoint_filename` (default: './weights/best_model.pth'): Path to the saved model weights file to be used for inference.
