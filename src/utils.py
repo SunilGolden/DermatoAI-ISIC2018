@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_
 import seaborn as sns
 import matplotlib.pyplot as plt
 from dataset import ISIC2018Dataset
-from models import create_vit_model
+from models import create_vit_model, create_resnet50_model
 
 
 def reset_random(random_seed=42):
@@ -270,9 +270,6 @@ def test(model, test_loader, device, class_names, cm_filename='confusion_matrix.
             'test/f1_score': test_f1,
             'test/precision': test_precision,
             'test/recall': test_recall,
-        })
-
-        wandb.log({
             'test/confusion_matrix' : wandb.plot.confusion_matrix(probs=None,
                                                              y_true=all_labels, 
                                                              preds=all_preds,
@@ -295,8 +292,14 @@ def remove_module_prefix(state_dict):
     return new_state_dict
 
 
-def load_model(model_path, num_classes, device):
-    model = create_vit_model(num_classes=num_classes)
+def load_model(architecture, model_path, num_classes, device):
+    if architecture == 'resnet50':
+        model = create_resnet50_model(num_classes=num_classes)
+    elif architecture == 'vit':
+        model = create_vit_model(num_classes=num_classes)
+    else:
+        raise ValueError(f"Unsupported architecture: {architecture}")
+
     state_dict = torch.load(model_path, map_location=device)
     
     # Remove module prefix if it exists

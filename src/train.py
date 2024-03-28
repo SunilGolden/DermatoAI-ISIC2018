@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import wandb
 from utils import reset_random, get_loaders, get_device, train
-from models import create_vit_model
+from models import create_vit_model, create_resnet50_model
 
 
 def main(args):
@@ -19,7 +19,13 @@ def main(args):
 
     # Create model
     reset_random(config_file['random_seed'])
-    model = create_vit_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+
+    if args.architecture == 'resnet50':
+        model = create_resnet50_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+    elif args.architecture == 'vit':
+        model = create_vit_model(num_classes=args.num_classes, dropout_rate=args.dropout_rate).to(device)
+    else:
+        raise ValueError(f"Unsupported architecture: {args.architecture}")
 
     if torch.cuda.device_count() > 1:
         print("Available GPUs", torch.cuda.device_count())
@@ -34,6 +40,7 @@ def main(args):
             project="DermatoAI-ISIC2018",
             name=args.run_name,
             config = {
+                "architecture": args.architecture,
                 "random_seed": config_file['random_seed'],
                 "batch_size": args.batch_size,
                 "num_classes": args.num_classes,
@@ -71,7 +78,8 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train Vision Transformer on ISIC2018 Dataset')
+    parser = argparse.ArgumentParser(description='Train Model on ISIC2018 Dataset')
+    parser.add_argument('--architecture', type=str, default='resnet50', choices=['vit', 'resnet50'], help='Architecture to use (vit or resnet50) (default: resnet50)')
     parser.add_argument('--batch_size', type=int, default=8, help='Input batch size for training (default: 8)')
     parser.add_argument('--num_classes', type=int, default=7, help='Number of classes (default: 7)')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train (default: 100)')
@@ -83,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--patience', type=int, default=10, help='Patience for early stopping (default: 10)')
     parser.add_argument('--subset', type=int, default=None, help='Use a subset of the full dataset (default: None)')
     parser.add_argument('--config_filepath', type=str, default='./config/config.json', help='Path to configuration file (default: ./config/config.json)')
-    parser.add_argument('--run_name', type=str, default='batch8-lr0_0001-dropout0_1', help='Run name of experiment (default: batch8-lr0_0001-dropout0_1)')
+    parser.add_argument('--run_name', type=str, default='resnet-batch8-lr0_0001-dropout0_1', help='Run name of experiment (default: resnet-batch8-lr0_0001-dropout0_1)')
     parser.add_argument('--checkpoint_filename', type=str, default='./weights/best_model.pth', help='Filename to save the best model (default: ./weights/best_model.pth)')
     parser.add_argument('--track_experiment', action='store_true')
     
