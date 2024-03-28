@@ -71,7 +71,8 @@ MSK Dataset: (c) Anonymous; https://arxiv.org/abs/1710.05006; https://arxiv.org/
 ## Training
 
 ```bash
-python src\train.py 
+python src\train.py
+        --architecture <vit or resnet50>
         --batch_size <batch_size> 
         --num_classes <num_classes> 
         --epochs <num_epochs> 
@@ -90,6 +91,7 @@ python src\train.py
 
 #### Arguments
 
+- `--architecture` (default: 'resnet50'): Architecture to use. Choose between 'vit' for Vision Transformer and 'resnet50' for ResNet-50.
 - `--batch_size` (default: 8): Input batch size for training.
 - `--num_classes` (default: 7): Number of classes.
 - `--epochs` (default: 100): Number of epochs to train.
@@ -101,7 +103,7 @@ python src\train.py
 - `--patience` (default: 10): Patience for early stopping.
 - `--subset` (default: None): Use a subset of the full dataset for training, specify the subset size.
 - `--config_filepath` (default: './config/config.json'): Path to the configuration file.
-- `--run_name` (default: 'batch8-lr0_0001-dropout0_1'): Name of the experiment run.
+- `--run_name` (default: 'resnet-batch8-lr0_0001-dropout0_1'): Name of the experiment run.
 - `--checkpoint_filename` (default: './weights/best_model.pth'): File path to save the best model weights.
 - `--track_experiment` (optional): Flag to track the experiment using Weights & Biases.
 
@@ -112,6 +114,7 @@ python src\train.py
 
 ```bash
 python src\evaluate.py 
+        --architecture <vit or resnet50>
         --batch_size <batch_size> 
         --num_classes <num_classes> 
         --config_filepath <path_to_config_file> 
@@ -123,11 +126,12 @@ python src\evaluate.py
 
 #### Arguments
 
+- `--architecture` (default: 'resnet50'): Architecture to use. Choose between 'vit' for Vision Transformer and 'resnet50' for ResNet-50.
 - `--batch_size` (default: 8): Input batch size for evaluation.
 - `--num_classes` (default: 7): Number of classes.
 - `--config_filepath` (default: './config/config.json'): Path to the configuration file.
 - `--checkpoint_filename` (default: './weights/best_model.pth'): Path to the saved model weights file.
 - `--cm_filename` (default: 'confusion_matrix'): Filename (without extension) for saving the generated confusion matrix image.
-- `--run_name` (default: 'batch8-lr0_0001-dropout0_1'): Name of the experiment run to be used for identifying the Weights & Biases run ID.
+- `--run_name` (default: 'resnet-batch8-lr0_0001-dropout0_1'): Name of the experiment run to be used for identifying the Weights & Biases run ID.
 - `--track_experiment` (optional): Flag to track the evaluation using Weights & Biases.
 
