@@ -3,6 +3,7 @@ import random
 import torch
 import numpy as np
 import wandb
+from PIL import Image
 from torchvision import transforms
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
@@ -201,7 +202,7 @@ def train(model,
     print('Training completed.')
 
 
-def plot_confusion_matrix(cm, class_names):
+def save_confusion_matrix(cm, class_names, cm_filename='confusion_matrix.png'):
     fig, ax = plt.subplots(figsize=(10, 10))
     sns.heatmap(cm, annot=True, fmt='d', ax=ax, cmap=plt.cm.Blues, cbar=False)
     ax.set_xlabel('Predicted Labels')
@@ -211,15 +212,16 @@ def plot_confusion_matrix(cm, class_names):
     ax.set_yticklabels(class_names)
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
-    plt.show()
+    plt.savefig(cm_filename)
 
 
-def test(model, test_loader, device, class_names):
+def test(model, test_loader, device, class_names, cm_filename='confusion_matrix.png', track_experiment=False):
     model.eval()
     test_loss, test_correct, total_samples = 0, 0, 0
     all_preds = []
     all_labels = []
     criterion = torch.nn.CrossEntropyLoss()
+    
     with torch.no_grad():
         for images, labels in test_loader:
             images, labels = images.to(device), labels.to(device)
@@ -249,11 +251,29 @@ def test(model, test_loader, device, class_names):
     # Compute confusion matrix
     cm = confusion_matrix(all_labels, all_preds)
 
+    # Print Metrics
     print('Test Loss: {:.4f}'.format(test_loss))
     print('Test Accuracy: {:.4f}'.format(test_accuracy))
     print('Test F1 Score: {:.4f}'.format(test_f1))
     print('Test Precision: {:.4f}'.format(test_precision))
     print('Test Recall: {:.4f}'.format(test_recall))
 
-    # Plot confusion matrix
-    plot_confusion_matrix(cm, class_names)
+    # Save confusion matrix
+    save_confusion_matrix(cm, class_names, cm_filename)
+
+    # Track Experiment
+    if track_experiment:
+        wandb.log({
+            'test/test_acc': test_accuracy,
+            'test/test_loss': test_loss,
+            'test/f1_score': test_f1,
+            'test/precision': test_precision,
+            'test/recall': test_recall,
+        })
+
+        wandb.log({
+            'test/confusion_matrix' : wandb.plot.confusion_matrix(probs=None,
+                                                             y_true=all_labels, 
+                                                             preds=all_preds,
+                                                             class_names=class_names)
+        })
