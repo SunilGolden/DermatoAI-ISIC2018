@@ -3,7 +3,7 @@ import random
 import torch
 import numpy as np
 import wandb
-from PIL import Image
+from collections import OrderedDict
 from torchvision import transforms
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
@@ -13,6 +13,7 @@ from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_
 import seaborn as sns
 import matplotlib.pyplot as plt
 from dataset import ISIC2018Dataset
+from models import create_vit_model
 
 
 def reset_random(random_seed=42):
@@ -277,3 +278,52 @@ def test(model, test_loader, device, class_names, cm_filename='confusion_matrix.
                                                              preds=all_preds,
                                                              class_names=class_names)
         })
+
+
+def remove_module_prefix(state_dict):
+    """
+    When we save the model after training on multiple GPUs with `nn.DataParallel`, it saves 
+    the `state_dict` with the `module.` prefix. When we load this `state_dict` into a model 
+    that isn't wrapped with `nn.DataParallel`, we need to remove the `module.` prefix.
+
+    This function adapts the keys in the state_dict by removing the `module.` prefix if it's present.
+    """
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        name = k[7:] if k.startswith('module.') else k  # remove `module.` prefix
+        new_state_dict[name] = v
+    return new_state_dict
+
+
+def load_model(model_path, num_classes, device):
+    model = create_vit_model(num_classes=num_classes)
+    state_dict = torch.load(model_path, map_location=device)
+    
+    # Remove module prefix if it exists
+    state_dict = remove_module_prefix(state_dict)
+    
+    model.load_state_dict(state_dict)
+    model.to(device)
+    model.eval()
+    
+    return model
+
+
+def get_run_id(project_name, run_name):
+    api = wandb.Api()
+
+    # List all runs in the specified project
+    runs = api.runs(f"{api.default_entity}/{project_name}")
+
+    # Filter runs by name
+    target_run = None
+    for run in runs:
+        if run.name == run_name:
+            target_run = run
+            break
+
+    if target_run is not None:
+        return target_run.id
+    else:
+        raise ValueError(f"No run found for name {run_name} in project {project_name}")
+

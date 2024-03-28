@@ -1,46 +1,18 @@
-import torch
 import json
 import argparse
 import wandb
-from models import create_vit_model
-from utils import get_device, get_loaders, test
-
-
-def load_model(model_path, num_classes):
-    model = create_vit_model(num_classes=num_classes)
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
-    model.eval()
-    return model
-
-
-def get_run_id(project_name, run_name):
-    api = wandb.Api()
-
-    # List all runs in the specified project
-    runs = api.runs(f"{api.default_entity}/{project_name}")
-
-    # Filter runs by name
-    target_run = None
-    for run in runs:
-        if run.name == run_name:
-            target_run = run
-            break
-
-    if target_run is not None:
-        return target_run.id
-    else:
-        raise ValueError(f"No run found for name {run_name} in project {project_name}")
+from utils import get_device, get_loaders, load_model, get_run_id, test
 
 
 def main(args):
     with open(args.config_filepath) as config_file:
         config_file = json.load(config_file)
 
-    # Load the model
-    model = load_model(num_classes=args.num_classes, model_path=args.checkpoint_filename)
-
     device = get_device()
 
+    # Load the model
+    model = load_model(num_classes=args.num_classes, model_path=args.checkpoint_filename, device=device)
+    
     _, _, test_loader = get_loaders(config_file, batch_size=args.batch_size)
 
     # Track Experiment
